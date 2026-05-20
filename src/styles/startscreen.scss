@@ -1,0 +1,17 @@
+.start-screen {
+  position: fixed;
+  inset: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(0, 0, 0, 0.34);
+}
+
+.start-screen button {
+  padding: 32px 64px;
+
+  font-size: 40px;
+  cursor: pointer;
+}

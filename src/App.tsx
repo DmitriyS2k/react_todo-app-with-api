@@ -13,13 +13,14 @@ import { useTodoFilter } from './hooks/useTodoFilter';
 import { useTodos } from './hooks/useTodos';
 import { useTodoLoading } from './hooks/useTodoLoading';
 import { useTodoActions } from './hooks/useTodoActions';
+import CustomLoader from './components/CustomLoader';
 
 export const App: React.FC = () => {
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const { error, setError } = useError();
 
-  const { todoList, setTodoList } = useTodos({
+  const { todoList, setTodoList, isLoading } = useTodos({
     inputRef,
     setError,
   });
@@ -105,6 +106,7 @@ export const App: React.FC = () => {
       </div>
 
       <ErrorNotification error={error} setError={setError} />
+      {isLoading && <CustomLoader />}
     </div>
   );
 };

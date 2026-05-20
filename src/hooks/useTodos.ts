@@ -10,6 +10,7 @@ type Params = {
 
 export const useTodos = ({ inputRef, setError }: Params) => {
   const [todoList, setTodoList] = React.useState<Todo[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
     inputRef.current?.focus();
@@ -23,6 +24,8 @@ export const useTodos = ({ inputRef, setError }: Params) => {
         setTodoList(data);
       } catch {
         setError('unableToLoad');
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -32,5 +35,6 @@ export const useTodos = ({ inputRef, setError }: Params) => {
   return {
     todoList,
     setTodoList,
+    isLoading,
   };
 };

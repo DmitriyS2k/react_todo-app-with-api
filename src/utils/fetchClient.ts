@@ -26,6 +26,18 @@ function request<T>(
     };
   }
 
+  if (method === 'GET') {
+    return wait(5000)
+      .then(() => fetch(BASE_URL + url, options))
+      .then(response => {
+        if (!response.ok) {
+          throw new Error();
+        }
+
+        return response.json();
+      });
+  }
+
   // DON'T change the delay it is required for tests
   return wait(100)
     .then(() => fetch(BASE_URL + url, options))

@@ -21,6 +21,20 @@
     -webkit-text-rendering: optimizeLegibility;
     -moz-text-rendering: optimizeLegibility;
     text-rendering: optimizeLegibility;
+
+    &:hover {
+      color: transparent;
+      background-image: url("../media/ilovets.webp");
+      background-size: 98%;
+      background-repeat: no-repeat;
+    }
+
+    &:active {
+      color: transparent;
+      background-image: url("../media/ilovereact.webp");
+      background-size: 98%;
+      background-repeat: no-repeat;
+    }
   }
 
   &__header {

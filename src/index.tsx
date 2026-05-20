@@ -4,6 +4,8 @@ import 'bulma/css/bulma.css';
 import '@fortawesome/fontawesome-free/css/all.css';
 import './styles/index.scss';
 
-import { App } from './App';
+import { MainPage } from './MainPage';
 
-createRoot(document.getElementById('root') as HTMLDivElement).render(<App />);
+createRoot(document.getElementById('root') as HTMLDivElement).render(
+  <MainPage />,
+);
