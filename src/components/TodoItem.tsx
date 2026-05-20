@@ -5,10 +5,51 @@ import { Todo } from '../types/Todo';
 type Props = {
   todo: Todo;
   isLoading?: boolean;
-  onDelete: (todoId: number) => void;
+  onDelete: (todoId: number) => Promise<boolean>;
+  onToggle: (todo: Todo) => void;
+  onRename: (todoId: number, newTitle: string) => Promise<boolean>;
 };
 
-export const TodoItem: React.FC<Props> = ({ todo, isLoading, onDelete }) => {
+export const TodoItem: React.FC<Props> = ({
+  todo,
+  isLoading,
+  onDelete,
+  onToggle,
+  onRename,
+}) => {
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [editedTitle, setEditedTitle] = React.useState(todo.title);
+
+  React.useEffect(() => {
+    setEditedTitle(todo.title);
+  }, [todo.title]);
+
+  const handleSubmit = async () => {
+    const normalizedTitle = editedTitle.trim();
+
+    if (!normalizedTitle) {
+      const isDeleted = await onDelete(todo.id);
+
+      if (isDeleted) {
+        setIsEditing(false);
+      }
+
+      return;
+    }
+
+    if (normalizedTitle === todo.title) {
+      setIsEditing(false);
+
+      return;
+    }
+
+    const isUpdated = await onRename(todo.id, normalizedTitle);
+
+    if (isUpdated) {
+      setIsEditing(false);
+    }
+  };
+
   return (
     <div
       data-cy="Todo"
@@ -23,23 +64,55 @@ export const TodoItem: React.FC<Props> = ({ todo, isLoading, onDelete }) => {
           type="checkbox"
           className="todo__status"
           checked={todo.completed}
-          readOnly
+          onChange={() => onToggle(todo)}
         />
       </label>
 
-      <span data-cy="TodoTitle" className="todo__title">
-        {todo.title}
-      </span>
+      {isEditing ? (
+        <form
+          onSubmit={async event => {
+            event.preventDefault();
 
-      {/* Remove button appears only on hover */}
-      <button
-        type="button"
-        className="todo__remove"
-        data-cy="TodoDelete"
-        onClick={() => onDelete(todo.id)}
-      >
-        ×
-      </button>
+            await handleSubmit();
+          }}
+        >
+          <input
+            data-cy="TodoTitleField"
+            type="text"
+            className="todo__title-field"
+            placeholder="Empty todo will be deleted"
+            value={editedTitle}
+            onChange={event => setEditedTitle(event.target.value)}
+            autoFocus
+            onKeyUp={event => {
+              if (event.key === 'Escape') {
+                setEditedTitle(todo.title);
+                setIsEditing(false);
+              }
+            }}
+            onBlur={handleSubmit}
+          />
+        </form>
+      ) : (
+        <>
+          <label
+            data-cy="TodoTitle"
+            className={'todo__title'}
+            onDoubleClick={() => setIsEditing(true)}
+          >
+            {todo.title}
+          </label>
+
+          <button
+            type="button"
+            className="todo__remove"
+            data-cy="TodoDelete"
+            onClick={() => onDelete(todo.id)}
+          >
+            ×
+          </button>
+        </>
+      )}
 
       {/* overlay will cover the todo while it is being deleted or updated */}
       <div

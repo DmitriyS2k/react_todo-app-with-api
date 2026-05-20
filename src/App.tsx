@@ -2,162 +2,58 @@
 /* eslint-disable jsx-a11y/control-has-associated-label */
 import React from 'react';
 import { UserWarning } from './UserWarning';
-import { getTodos, USER_ID, addTodo, deleteTodo } from './api/todos';
-import { Todo } from './types/Todo';
-import { ErrorType } from './types/Errors';
-import { ErrorNotification } from './components/ErrorNotification';
 import { Header } from './components/Header';
-import { TodoList } from './components/TodoList';
 import { TodoFooter } from './components/TodoFooter';
 import { TodoItem } from './components/TodoItem';
-
-enum TodoStatus {
-  All = 'All',
-  Active = 'Active',
-  Completed = 'Completed',
-}
+import { TodoList } from './components/TodoList';
+import { ErrorNotification } from './components/ErrorNotification';
+import { USER_ID } from './api/todos';
+import { useError } from './hooks/useError';
+import { useTodoFilter } from './hooks/useTodoFilter';
+import { useTodos } from './hooks/useTodos';
+import { useTodoLoading } from './hooks/useTodoLoading';
+import { useTodoActions } from './hooks/useTodoActions';
 
 export const App: React.FC = () => {
-  const [todoList, setTodoList] = React.useState<Todo[]>([]);
-  const [error, setError] = React.useState<ErrorType | null>(null);
-  const [filterByStatus, setFilterByStatus] = React.useState<TodoStatus>(
-    TodoStatus.All,
-  );
-  const [newTodoTitle, setNewTodoTitle] = React.useState('');
-  const [isAddingTodo, setIsAddingTodo] = React.useState(false);
-  const [tempTodo, setTempTodo] = React.useState<Todo | null>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const [loadingTodoIds, setLoadingTodoIds] = React.useState<number[]>([]);
 
-  React.useEffect(() => {
-    inputRef.current?.focus();
-    const loadTodos = async () => {
-      try {
-        setError(null);
+  const { error, setError } = useError();
 
-        const data = await getTodos();
+  const { todoList, setTodoList } = useTodos({
+    inputRef,
+    setError,
+  });
 
-        setTodoList(data);
-      } catch {
-        setError('unableToLoad');
-      }
-    };
+  const { loadingTodoIds, addLoadingTodo, removeLoadingTodo } =
+    useTodoLoading();
 
-    void loadTodos();
-  }, []);
+  const {
+    tempTodo,
+    isAddingTodo,
+    newTodoTitle,
+    setNewTodoTitle,
+    isAllCompleted,
+    handleAddTodo,
+    handleDeleteTodo,
+    handleToggleTodo,
+    handleToggleAll,
+    handleRenameTodo,
+    handleClearCompleted,
+  } = useTodoActions({
+    todoList,
+    setTodoList,
+    inputRef,
+    setError,
+    addLoadingTodo,
+    removeLoadingTodo,
+  });
 
-  React.useEffect(() => {
-    if (!error) {
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setError(null);
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [error]);
-
-  const filteredTodosList = React.useMemo(() => {
-    switch (filterByStatus) {
-      case TodoStatus.All:
-        return todoList;
-
-      case TodoStatus.Active:
-        return todoList.filter(todo => !todo.completed);
-
-      case TodoStatus.Completed:
-        return todoList.filter(todo => todo.completed);
-
-      default:
-        return todoList;
-    }
-  }, [filterByStatus, todoList]);
-
-  const isAllCompleted =
-    todoList.length > 0 && todoList.every(todo => todo.completed);
-
-  const activeTodosCount = React.useMemo(() => {
-    return todoList.filter(todo => !todo.completed).length;
-  }, [todoList]);
-
-  const handleAddTodo = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    const normalizedTitle = newTodoTitle.trim();
-
-    if (!normalizedTitle) {
-      setError('titleInput');
-
-      return;
-    }
-
-    try {
-      setError(null);
-      setIsAddingTodo(true);
-
-      const temporaryTodo: Todo = {
-        id: 0,
-        title: normalizedTitle,
-        completed: false,
-        userId: USER_ID,
-      };
-
-      setTempTodo(temporaryTodo);
-
-      const createdTodo = await addTodo({
-        title: normalizedTitle,
-        completed: false,
-        userId: USER_ID,
-      });
-
-      setTodoList(currentTodos => [...currentTodos, createdTodo]);
-
-      setNewTodoTitle('');
-    } catch {
-      setError('unableToCreate');
-    } finally {
-      setIsAddingTodo(false);
-      setTempTodo(null);
-
-      setTimeout(() => {
-        inputRef.current?.focus();
-      });
-    }
-  };
-
-  const addLoadingTodo = (todoId: number) => {
-    setLoadingTodoIds(current => [...current, todoId]);
-  };
-
-  const removeLoadingTodo = (todoId: number) => {
-    setLoadingTodoIds(current => current.filter(id => id !== todoId));
-  };
-
-  const handleDeleteTodo = async (todoId: number) => {
-    try {
-      setError(null);
-
-      addLoadingTodo(todoId);
-
-      await deleteTodo(todoId);
-
-      setTodoList(currentTodos =>
-        currentTodos.filter(todo => todo.id !== todoId),
-      );
-    } catch {
-      setError('unableToDelete');
-    } finally {
-      removeLoadingTodo(todoId);
-      inputRef.current?.focus();
-    }
-  };
-
-  const handleClearCompleted = async () => {
-    const todosToDelete = todoList.filter(todo => todo.completed);
-
-    await Promise.all(todosToDelete.map(todo => handleDeleteTodo(todo.id)));
-  };
+  const {
+    filterByStatus,
+    setFilterByStatus,
+    filteredTodosList,
+    activeTodosCount,
+  } = useTodoFilter(todoList);
 
   if (!USER_ID) {
     return <UserWarning />;
@@ -175,18 +71,28 @@ export const App: React.FC = () => {
           isAddingTodo={isAddingTodo}
           inputRef={inputRef}
           onSubmit={handleAddTodo}
+          onToggleAll={handleToggleAll}
+          hasTodos={todoList.length > 0}
         />
 
         <TodoList
           todos={filteredTodosList}
           onDelete={handleDeleteTodo}
           loadingTodoIds={loadingTodoIds}
+          onToggle={handleToggleTodo}
+          onRename={handleRenameTodo}
         />
+
         {tempTodo && (
-          <TodoItem todo={tempTodo} isLoading onDelete={handleDeleteTodo} />
+          <TodoItem
+            todo={tempTodo}
+            isLoading
+            onDelete={handleDeleteTodo}
+            onToggle={handleToggleTodo}
+            onRename={handleRenameTodo}
+          />
         )}
 
-        {/* Hide the footer if there are no todos */}
         {todoList.length > 0 && (
           <TodoFooter
             todosLeft={activeTodosCount}
@@ -197,6 +103,7 @@ export const App: React.FC = () => {
           />
         )}
       </div>
+
       <ErrorNotification error={error} setError={setError} />
     </div>
   );

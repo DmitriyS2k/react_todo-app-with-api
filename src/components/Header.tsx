@@ -8,6 +8,8 @@ type Props = {
   isAllCompleted: boolean;
   inputRef: React.RefObject<HTMLInputElement>;
   onSubmit: (event: React.FormEvent) => void;
+  onToggleAll: () => void;
+  hasTodos: boolean;
 };
 
 export const Header: React.FC<Props> = ({
@@ -17,17 +19,22 @@ export const Header: React.FC<Props> = ({
   isAddingTodo,
   inputRef,
   onSubmit,
+  onToggleAll,
+  hasTodos,
 }) => {
   return (
     <header className="todoapp__header">
       {/* this button should have `active` class only if all todos are completed */}
-      <button
-        type="button"
-        className={classNames('todoapp__toggle-all', {
-          active: isAllCompleted,
-        })}
-        data-cy="ToggleAllButton"
-      />
+      {hasTodos && (
+        <button
+          type="button"
+          className={classNames('todoapp__toggle-all', {
+            active: isAllCompleted,
+          })}
+          data-cy="ToggleAllButton"
+          onClick={onToggleAll}
+        />
+      )}
       <form onSubmit={onSubmit}>
         <input
           ref={inputRef}
